@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "author": "UrbanGuard AI",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -200,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pir",
+      "id": "pir1",
+      "top": -100,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-microphone",
+      "id": "mic1",
+      "top": 0,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": -300,
+      "left": 500,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led2",
+      "top": -200,
+      "left": 500,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "buzzer1",
+      "top": -100,
+      "left": 500,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": 100,
+      "left": 300,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-ds1307",
+      "id": "rtc1",
+      "top": 200,
+      "left": 300,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    ["uno:5V", "dht1:VCC", "red"],
+    ["uno:GND", "dht1:GND", "black"],
+    ["uno:2", "dht1:OUT", "green"],
+    ["uno:5V", "pir1:VCC", "red"],
+    ["uno:GND", "pir1:GND", "black"],
+    ["uno:3", "pir1:OUT", "blue"],
+    ["uno:5V", "mic1:VCC", "red"],
+    ["uno:GND", "mic1:GND", "black"],
+    ["uno:A0", "mic1:AOUT", "orange"],
+    ["uno:5V", "lcd1:VCC", "red"],
+    ["uno:GND", "lcd1:GND", "black"],
+    ["uno:A4", "lcd1:SDA", "yellow"],
+    ["uno:A5", "lcd1:SCL", "green"],
+    ["uno:5V", "rtc1:VCC", "red"],
+    ["uno:GND", "rtc1:GND", "black"],
+    ["uno:A4", "rtc1:SDA", "yellow"],
+    ["uno:A5", "rtc1:SCL", "green"],
+    ["uno:7", "led1:ANODE", "blue"],
+    ["uno:8", "led2:ANODE", "green"],
+    ["uno:GND", "led1:CATHODE", "black"],
+    ["uno:GND", "led2:CATHODE", "black"],
+    ["uno:9", "buzzer1:POS", "purple"],
+    ["uno:GND", "buzzer1:NEG", "black"]
+  ],
+  "dependencies": {}
+}

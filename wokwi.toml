@@ -1,0 +1,117 @@
+# wokwi.toml
+version = 1
+
+[wokwi]
+version = 1
+firmware = "firmware.ino"
+
+[[parts]]
+type = "wokwi-arduino-uno"
+id = "uno"
+
+[[parts]]
+type = "wokwi-dht22"
+id = "dht1"
+
+[[parts]]
+type = "wokwi-pir"
+id = "pir1"
+
+[[parts]]
+type = "wokwi-microphone"
+id = "mic1"
+
+[[parts]]
+type = "wokwi-led"
+id = "led1"
+attrs = { color = "red" }
+
+[[parts]]
+type = "wokwi-led"
+id = "led2"
+attrs = { color = "green" }
+
+[[parts]]
+type = "wokwi-buzzer"
+id = "buzzer1"
+
+[[parts]]
+type = "wokwi-lcd1602"
+id = "lcd1"
+attrs = { address = "0x27" }
+
+[[connections]]
+pin1 = "uno:5V"
+pin2 = "dht1:VCC"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "dht1:GND"
+
+[[connections]]
+pin1 = "uno:2"
+pin2 = "dht1:OUT"
+
+[[connections]]
+pin1 = "uno:5V"
+pin2 = "pir1:VCC"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "pir1:GND"
+
+[[connections]]
+pin1 = "uno:3"
+pin2 = "pir1:OUT"
+
+[[connections]]
+pin1 = "uno:5V"
+pin2 = "mic1:VCC"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "mic1:GND"
+
+[[connections]]
+pin1 = "uno:A0"
+pin2 = "mic1:AOUT"
+
+[[connections]]
+pin1 = "uno:5V"
+pin2 = "lcd1:VCC"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "lcd1:GND"
+
+[[connections]]
+pin1 = "uno:A4"
+pin2 = "lcd1:SDA"
+
+[[connections]]
+pin1 = "uno:A5"
+pin2 = "lcd1:SCL"
+
+[[connections]]
+pin1 = "uno:7"
+pin2 = "led1:ANODE"
+
+[[connections]]
+pin1 = "uno:8"
+pin2 = "led2:ANODE"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "led1:CATHODE"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "led2:CATHODE"
+
+[[connections]]
+pin1 = "uno:9"
+pin2 = "buzzer1:POS"
+
+[[connections]]
+pin1 = "uno:GND"
+pin2 = "buzzer1:NEG"

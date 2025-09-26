@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UrbanGuard AI - Global Safety Monitor</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+        }
+        
+        .sidebar {
+            width: 350px;
+            background-color: #16213e;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #0f3460;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            color: #4cc9f0;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.9rem;
+            color: #a9b7c6;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #0f3460;
+            border: 1px solid #1a3a5f;
+            border-radius: 8px;
+            color: #e6e6e6;
+            font-size: 0.9rem;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #4cc9f0;
+            box-shadow: 0 0 0 2px rgba(76, 201, 240, 0.2);
+        }
+        
+        .search-results {
+            position: absolute;
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10000;
+            width: 100%;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .search-result-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #0f3460;
+        }
+        
+        .search-result-item:hover {
+            background-color: #1a3a5f;
+        }
+        
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background-color: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4cc9f0;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #a9b7c6;
+        }
+        
+        .connection-status {
+            background-color: #0f3460;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        .status-connected {
+            color: #00b894;
+            border-left: 4px solid #00b894;
+        }
+        
+        .status-simulated {
+            color: #fdcb6e;
+            border-left: 4px solid #fdcb6e;
+        }
+        
+        .events-container {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        .events-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #4cc9f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .event-list {
+            list-style: none;
+        }
+        
+        .event-item {
+            background-color: #0f3460;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4cc9f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .event-item:hover {
+            transform: translateX(5px);
+            background-color: #1a3a5f;
+        }
+        
+        .event-type {
+            font-weight: bold;
+            color: #4cc9f0;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .event-location {
+            font-size: 0.85rem;
+            color: #a9b7c6;
+            margin-bottom: 5px;
+        }
+        
+        .event-time {
+            font-size: 0.8rem;
+            color: #7a8ca5;
+        }
+        
+        .map-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+            cursor: grab;
+        }
+        
+        #map:active {
+            cursor: grabbing;
+        }
+        
+        /* Draggable controls */
+        .draggable-control {
+            position: absolute;
+            z-index: 1000;
+            background-color: rgba(22, 33, 62, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            user-select: none;
+            cursor: move;
+        }
+        
+        .draggable-control .drag-handle {
+            padding: 8px 12px;
+            background-color: rgba(15, 52, 96, 0.8);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #4cc9f0;
+            font-size: 0.9rem;
+        }
+        
+        .draggable-control .drag-content {
+            padding: 15px;
+        }
+        
+        .controls {
+            top: 20px;
+            right: 20px;
+            width: 180px;
+        }
+        
+        .legend {
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+        }
+        
+        .category-filter {
+            bottom: 20px;
+            left: 20px;
+            width: 200px;
+        }
+        
+        .view-toggle {
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .zoom-controls {
+            top: 80px;
+            left: 20px;
+            padding: 10px;
+        }
+        
+        .map-type-controls {
+            top: 140px;
+            left: 20px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #a9b7c6;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #0f3460;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4cc9f0;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .legend-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+        
+        .legend-label {
+            font-size: 0.9rem;
+            color: #a9b7c6;
+        }
+        
+        .time-filter {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .time-btn {
+            padding: 5px 10px;
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            color: #a9b7c6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .time-btn.active {
+            background-color: #4cc9f0;
+            color: #16213e;
+        }
+        
+        .time-btn:hover {
+            background-color: #1a3a5f;
+        }
+        
+        .view-btn {
+            padding: 8px 15px;
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            color: #a9b7c6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .view-btn.active {
+            background-color: #4cc9f0;
+            color: #16213e;
+        }
+        
+        .view-btn:hover {
+            background-color: #1a3a5f;
+        }
+        
+        .category-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+        }
+        
+        .category-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .category-checkbox {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .category-label {
+            font-size: 0.9rem;
+            color: #a9b7c6;
+            cursor: pointer;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            color: #a9b7c6;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: block;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .zoom-btn:hover {
+            background-color: #1a3a5f;
+        }
+        
+        .zoom-btn:active {
+            background-color: #4cc9f0;
+            color: #16213e;
+        }
+
+        .map-type-btn {
+            padding: 8px 12px;
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            color: #a9b7c6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .map-type-btn.active {
+            background-color: #4cc9f0;
+            color: #16213e;
+        }
+        
+        .map-type-btn:hover {
+            background-color: #1a3a5f;
+        }
+
+        /* Enhanced popup styles */
+        .leaflet-popup-content-wrapper {
+            background-color: #16213e;
+            color: #e6e6e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .leaflet-popup-tip {
+            background-color: #16213e;
+        }
+        
+        .event-popup {
+            min-width: 250px;
+            max-width: 300px;
+        }
+        
+        .event-popup h3 {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 5px;
+        }
+        
+        .event-popup p {
+            margin: 8px 0;
+            font-size: 0.9rem;
+        }
+        
+        .event-popup .severity-bar {
+            height: 8px;
+            background-color: #0f3460;
+            border-radius: 4px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        
+        .event-popup .severity-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .event-popup .actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .event-popup .action-btn {
+            flex: 1;
+            padding: 8px;
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            color: #a9b7c6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .event-popup .action-btn:hover {
+            background-color: #4cc9f0;
+            color: #16213e;
+        }
+        
+        .event-details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .event-details-content {
+            background-color: #16213e;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        .event-details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 10px;
+        }
+        
+        .event-details-title {
+            color: #4cc9f0;
+            font-size: 1.5rem;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: #a9b7c6;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            color: #4cc9f0;
+        }
+        
+        .event-details-info {
+            margin-bottom: 20px;
+        }
+        
+        .event-details-info p {
+            margin: 10px 0;
+        }
+        
+        .event-details-map {
+            height: 200px;
+            margin-top: 15px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40%;
+            }
+            
+            .map-container {
+                height: 60%;
+            }
+            
+            .draggable-control {
+                min-width: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar with statistics and events -->
+    <div class="sidebar">
+        <div class="header">
+            <h1>UrbanGuard AI - Global Safety Monitor</h1>
+            <p>Worldwide AI-Powered Safety Event Detection</p>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" class="search-box" id="search-box" placeholder="Search locations, events, or sensors...">
+            <div class="search-results" id="search-results"></div>
+        </div>
+        
+        <div class="connection-status status-simulated" id="connection-status">
+            Using Global Simulated Data
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Active Cities</div>
+                <div class="stat-value" id="active-cities">24</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Events Today</div>
+                <div class="stat-value" id="events-today">187</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Global Safety Index</div>
+                <div class="stat-value" id="safety-index">72%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Sensors</div>
+                <div class="stat-value" id="active-sensors">1,240</div>
+            </div>
+        </div>
+        
+        <div class="events-container">
+            <div class="events-title">
+                <span>Recent Global Events</span>
+                <div class="time-filter">
+                    <button class="time-btn active" data-time="1h">1H</button>
+                    <button class="time-btn" data-time="6h">6H</button>
+                    <button class="time-btn" data-time="24h">24H</button>
+                </div>
+            </div>
+            <ul class="event-list" id="event-list">
+                <!-- Events will be populated by JavaScript -->
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div class="map-container">
+        <div id="map"></div>
+        
+        <!-- Draggable Controls -->
+        <div class="draggable-control view-toggle" id="view-toggle-control">
+            <div class="drag-handle">
+                <span>View Controls</span>
+                <span>≡</span>
+            </div>
+            <div class="drag-content">
+                <button class="view-btn active" id="view-global">Global View</button>
+                <button class="view-btn" id="view-city">City View</button>
+            </div>
+        </div>
+        
+        <div class="draggable-control map-type-controls" id="map-type-control">
+            <div class="drag-handle">
+                <span>Map Type</span>
+                <span>≡</span>
+            </div>
+            <div class="drag-content">
+                <button class="map-type-btn active" id="map-street">Street</button>
+                <button class="map-type-btn" id="map-satellite">Satellite</button>
+                <button class="map-type-btn" id="map-hybrid">Hybrid</button>
+            </div>
+        </div>
+        
+        <div class="draggable-control zoom-controls" id="zoom-control">
+            <div class="drag-handle">
+                <span>Zoom Controls</span>
+                <span>≡</span>
+            </div>
+            <div class="drag-content">
+                <button class="zoom-btn" id="zoom-in">+</button>
+                <button class="zoom-btn" id="zoom-out">-</button>
+                <button class="zoom-btn" id="zoom-fit">⤢</button>
+            </div>
+        </div>
+        
+        <div class="draggable-control category-filter" id="category-control">
+            <div class="drag-handle">
+                <span>Event Categories</span>
+                <span>≡</span>
+            </div>
+            <div class="drag-content">
+                <div class="category-item">
+                    <input type="checkbox" id="crime-toggle" class="category-checkbox" checked>
+                    <label for="crime-toggle" class="category-label">Crime</label>
+                </div>
+                <div class="category-item">
+                    <input type="checkbox" id="disaster-toggle" class="category-checkbox" checked>
+                    <label for="disaster-toggle" class="category-label">Disaster</label>
+                </div>
+                <div class="category-item">
+                    <input type="checkbox" id="environment-toggle" class="category-checkbox" checked>
+                    <label for="environment-toggle" class="category-label">Environment</label>
+                </div>
+                <div class="category-item">
+                    <input type="checkbox" id="traffic-toggle" class="category-checkbox" checked>
+                    <label for="traffic-toggle" class="category-label">Traffic</label>
+                </div>
+                <div class="category-item">
+                    <input type="checkbox" id="public-toggle" class="category-checkbox" checked>
+                    <label for="public-toggle" class="category-label">Public Safety</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="draggable-control controls" id="map-controls">
+            <div class="drag-handle">
+                <span>Map Controls</span>
+                <span>≡</span>
+            </div>
+            <div class="drag-content">
+                <div class="control-group">
+                    <span class="control-label">Show Heatmap</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="heatmap-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Show Events</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="events-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Auto-Refresh</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="refresh-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="draggable-control legend" id="legend-control">
+            <div class="drag-handle">
+                <span>Safety Legend</span>
+                <span>≡</span>
+            </div>
+            <div class="drag-content">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #00b894;"></div>
+                    <span class="legend-label">Safe (0-2)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4cc9f0;"></div>
+                    <span class="legend-label">Low Risk (3-4)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #fdcb6e;"></div>
+                    <span class="legend-label">Moderate (5-6)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #e17055;"></div>
+                    <span class="legend-label">Elevated (7-8)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #d63031;"></div>
+                    <span class="legend-label">Critical (9-10)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div class="event-details-modal" id="event-details-modal">
+        <div class="event-details-content">
+            <div class="event-details-header">
+                <h2 class="event-details-title" id="event-details-title">Event Details</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="event-details-info" id="event-details-info">
+                <!-- Event details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Heat Plugin -->
+    <script src="https://cdn.jsdelivr.net/gh/Leaflet/Leaflet.heat/dist/leaflet-heat.js"></script>
+    
+    <script>
+        // Enhanced UrbanGuardApp with Fixed Issues
+        class UrbanGuardApp {
+            static init() {
+                this.sensors = new Map();
+                this.events = [];
+                this.heatmapLayer = null;
+                this.eventMarkers = L.layerGroup();
+                this.isConnected = false;
+                this.currentView = 'global';
+                this.activeCategories = new Set(['crime', 'disaster', 'environment', 'traffic', 'public']);
+                this.searchIndex = [];
+                this.currentEventDetails = null;
+                this.currentMapType = 'street';
+                this.mapLayers = {
+                    street: null,
+                    satellite: null,
+                    hybrid: null
+                };
+                
+                this.initializeMap();
+                this.setupEventListeners();
+                this.setupDraggableControls();
+                this.buildSearchIndex();
+                this.generateGlobalData();
+                
+                console.log('UrbanGuard AI Global Safety Monitor initialized with Fixed Issues');
+            }
+
+            static initializeMap() {
+                // Initialize 2D Map
+                this.map = L.map('map', {
+                    center: [20, 0],
+                    zoom: 2,
+                    dragging: true,
+                    scrollWheelZoom: true,
+                    tap: true,
+                    touchZoom: true,
+                    boxZoom: true,
+                    doubleClickZoom: true,
+                    keyboard: true,
+                    zoomControl: false
+                });
+                
+                // Add different tile layers
+                this.mapLayers.street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                });
+                
+                this.mapLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '&copy; Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community'
+                });
+                
+                this.mapLayers.hybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                    attribution: '&copy; Google Maps'
+                });
+                
+                // Add default street layer
+                this.mapLayers.street.addTo(this.map);
+                
+                // Add event markers layer to map
+                this.eventMarkers.addTo(this.map);
+            }
+
+            static setupDraggableControls() {
+                // Make all draggable controls movable
+                const draggableElements = document.querySelectorAll('.draggable-control');
+                
+                draggableElements.forEach(element => {
+                    this.makeElementDraggable(element);
+                });
+            }
+
+            static makeElementDraggable(element) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                const dragHandle = element.querySelector('.drag-handle');
+                
+                if (dragHandle) {
+                    dragHandle.onmousedown = dragMouseDown;
+                } else {
+                    element.onmousedown = dragMouseDown;
+                }
+
+                function dragMouseDown(e) {
+                    e = e || window.event;
+                    e.preventDefault();
+                    
+                    // Get the initial mouse cursor position
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    
+                    document.onmouseup = closeDragElement;
+                    document.onmousemove = elementDrag;
+                }
+
+                function elementDrag(e) {
+                    e = e || window.event;
+                    e.preventDefault();
+                    
+                    // Calculate the new cursor position
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    
+                    // Set the element's new position
+                    element.style.top = (element.offsetTop - pos2) + "px";
+                    element.style.left = (element.offsetLeft - pos1) + "px";
+                }
+
+                function closeDragElement() {
+                    // Stop moving when mouse button is released
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+            }
+
+            static setupEventListeners() {
+                // Search functionality
+                const searchBox = document.getElementById('search-box');
+                const searchResults = document.getElementById('search-results');
+
+                searchBox.addEventListener('input', (e) => {
+                    this.handleSearch(e.target.value);
+                });
+
+                searchBox.addEventListener('focus', () => {
+                    if (searchBox.value.length > 0) {
+                        searchResults.style.display = 'block';
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!searchBox.contains(e.target) && !searchResults.contains(e.target)) {
+                        searchResults.style.display = 'none';
+                    }
+                });
+
+                // Modal functionality
+                document.getElementById('close-modal').addEventListener('click', () => {
+                    document.getElementById('event-details-modal').style.display = 'none';
+                });
+
+                // Close modal when clicking outside
+                document.getElementById('event-details-modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'event-details-modal') {
+                        document.getElementById('event-details-modal').style.display = 'none';
+                    }
+                });
+
+                // Map type controls
+                document.getElementById('map-street').addEventListener('click', () => {
+                    this.changeMapType('street');
+                });
+                
+                document.getElementById('map-satellite').addEventListener('click', () => {
+                    this.changeMapType('satellite');
+                });
+                
+                document.getElementById('map-hybrid').addEventListener('click', () => {
+                    this.changeMapType('hybrid');
+                });
+
+                // Existing event listeners...
+                document.getElementById('heatmap-toggle').addEventListener('change', (e) => {
+                    if (this.heatmapLayer) {
+                        if (e.target.checked) {
+                            this.map.addLayer(this.heatmapLayer);
+                        } else {
+                            this.map.removeLayer(this.heatmapLayer);
+                        }
+                    }
+                });
+
+                document.getElementById('events-toggle').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        this.map.addLayer(this.eventMarkers);
+                    } else {
+                        this.map.removeLayer(this.eventMarkers);
+                    }
+                });
+
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.applyTimeFilter(e.target.dataset.time);
+                    });
+                });
+
+                document.getElementById('view-global').addEventListener('click', () => {
+                    this.switchView('global');
+                });
+
+                document.getElementById('view-city').addEventListener('click', () => {
+                    this.switchView('city');
+                });
+
+                document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const category = e.target.id.replace('-toggle', '');
+                        if (e.target.checked) {
+                            this.activeCategories.add(category);
+                        } else {
+                            this.activeCategories.delete(category);
+                        }
+                        this.updateHeatmapAndEvents();
+                    });
+                });
+
+                // Zoom controls
+                document.getElementById('zoom-in').addEventListener('click', () => {
+                    this.map.zoomIn();
+                });
+
+                document.getElementById('zoom-out').addEventListener('click', () => {
+                    this.map.zoomOut();
+                });
+
+                document.getElementById('zoom-fit').addEventListener('click', () => {
+                    this.zoomToFit();
+                });
+            }
+
+            static changeMapType(type) {
+                // Remove current layer
+                if (this.mapLayers[this.currentMapType]) {
+                    this.map.removeLayer(this.mapLayers[this.currentMapType]);
+                }
+                
+                // Add new layer
+                if (this.mapLayers[type]) {
+                    this.mapLayers[type].addTo(this.map);
+                    this.currentMapType = type;
+                }
+                
+                // Update button states
+                document.querySelectorAll('.map-type-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.getElementById(`map-${type}`).classList.add('active');
+            }
+
+            static zoomToFit() {
+                if (this.events.length > 0) {
+                    const group = new L.featureGroup();
+                    this.events.forEach(event => {
+                        group.addLayer(L.marker([event.location.lat, event.location.lng]));
+                    });
+                    this.map.fitBounds(group.getBounds(), { padding: [20, 20] });
+                }
+            }
+
+            static buildSearchIndex() {
+                // Enhanced search index with worldwide locations
+                this.searchIndex = [
+                    // Major world cities
+                    { name: "New York", lat: 40.7128, lng: -74.0060, type: "city", country: "USA" },
+                    { name: "London", lat: 51.5074, lng: -0.1278, type: "city", country: "UK" },
+                    { name: "Tokyo", lat: 35.6762, lng: 139.6503, type: "city", country: "Japan" },
+                    { name: "Paris", lat: 48.8566, lng: 2.3522, type: "city", country: "France" },
+                    { name: "Sydney", lat: -33.8688, lng: 151.2093, type: "city", country: "Australia" },
+                    { name: "Cairo", lat: 30.0444, lng: 31.2357, type: "city", country: "Egypt" },
+                    { name: "Mumbai", lat: 19.0760, lng: 72.8777, type: "city", country: "India" },
+                    { name: "Beijing", lat: 39.9042, lng: 116.4074, type: "city", country: "China" },
+                    { name: "Moscow", lat: 55.7558, lng: 37.6173, type: "city", country: "Russia" },
+                    { name: "Rio de Janeiro", lat: -22.9068, lng: -43.1729, type: "city", country: "Brazil" },
+                    { name: "Berlin", lat: 52.5200, lng: 13.4050, type: "city", country: "Germany" },
+                    { name: "Rome", lat: 41.9028, lng: 12.4964, type: "city", country: "Italy" },
+                    { name: "Madrid", lat: 40.4168, lng: -3.7038, type: "city", country: "Spain" },
+                    { name: "Toronto", lat: 43.6532, lng: -79.3832, type: "city", country: "Canada" },
+                    { name: "Mexico City", lat: 19.4326, lng: -99.1332, type: "city", country: "Mexico" },
+                    { name: "Bangkok", lat: 13.7563, lng: 100.5018, type: "city", country: "Thailand" },
+                    { name: "Singapore", lat: 1.3521, lng: 103.8198, type: "city", country: "Singapore" },
+                    { name: "Dubai", lat: 25.2048, lng: 55.2708, type: "city", country: "UAE" },
+                    { name: "Istanbul", lat: 41.0082, lng: 28.9784, type: "city", country: "Turkey" },
+                    { name: "Seoul", lat: 37.5665, lng: 126.9780, type: "city", country: "South Korea" },
+                    
+                    // Indian cities
+                    { name: "Coimbatore", lat: 11.0168, lng: 76.9558, type: "city", country: "India" },
+                    { name: "Delhi", lat: 28.6139, lng: 77.2090, type: "city", country: "India" },
+                    { name: "Bangalore", lat: 12.9716, lng: 77.5946, type: "city", country: "India" },
+                    { name: "Chennai", lat: 13.0827, lng: 80.2707, type: "city", country: "India" },
+                    { name: "Kolkata", lat: 22.5726, lng: 88.3639, type: "city", country: "India" },
+                    { name: "Hyderabad", lat: 17.3850, lng: 78.4867, type: "city", country: "India" },
+                    { name: "Pune", lat: 18.5204, lng: 73.8567, type: "city", country: "India" },
+                    { name: "Ahmedabad", lat: 23.0225, lng: 72.5714, type: "city", country: "India" },
+                    { name: "Jaipur", lat: 26.9124, lng: 75.7873, type: "city", country: "India" },
+                    { name: "Lucknow", lat: 26.8467, lng: 80.9462, type: "city", country: "India" },
+                    
+                    // Coimbatore locations
+                    { name: "PSG Tech", lat: 11.0168, lng: 76.9558, type: "location", country: "India" },
+                    { name: "Coimbatore Railway Station", lat: 11.0180, lng: 76.9555, type: "location", country: "India" },
+                    { name: "Coimbatore Medical College", lat: 11.0069, lng: 76.9666, type: "location", country: "India" },
+                    { name: "Tidel Park", lat: 11.0137, lng: 76.9585, type: "location", country: "India" },
+                    { name: "Race Course", lat: 11.0055, lng: 76.9637, type: "location", country: "India" },
+                    { name: "Gandhipuram", lat: 11.0100, lng: 76.9600, type: "location", country: "India" },
+                    { name: "Saravanampatti", lat: 11.0650, lng: 76.9520, type: "location", country: "India" },
+                    { name: "Ukkadam", lat: 10.9900, lng: 76.9600, type: "location", country: "India" },
+                    
+                    // Countries
+                    { name: "United States", lat: 39.8283, lng: -98.5795, type: "country" },
+                    { name: "India", lat: 20.5937, lng: 78.9629, type: "country" },
+                    { name: "China", lat: 35.8617, lng: 104.1954, type: "country" },
+                    { name: "United Kingdom", lat: 55.3781, lng: -3.4360, type: "country" },
+                    { name: "Germany", lat: 51.1657, lng: 10.4515, type: "country" },
+                    { name: "France", lat: 46.2276, lng: 2.2137, type: "country" },
+                    { name: "Japan", lat: 36.2048, lng: 138.2529, type: "country" },
+                    { name: "Brazil", lat: -14.2350, lng: -51.9253, type: "country" },
+                    { name: "Australia", lat: -25.2744, lng: 133.7751, type: "country" },
+                    { name: "Canada", lat: 56.1304, lng: -106.3468, type: "country" },
+                    
+                    // Event types
+                    { name: "Crime Events", type: "event-type" },
+                    { name: "Disaster Alerts", type: "event-type" },
+                    { name: "Environmental Issues", type: "event-type" },
+                    { name: "Traffic Incidents", type: "event-type" },
+                    { name: "Public Safety", type: "event-type" },
+                    
+                    // Sensor types
+                    { name: "Camera Sensors", type: "sensor-type" },
+                    { name: "Microphone Sensors", type: "sensor-type" },
+                    { name: "Motion Sensors", type: "sensor-type" },
+                    { name: "Environmental Sensors", type: "sensor-type" }
+                ];
+            }
+
+            static handleSearch(query) {
+                const resultsContainer = document.getElementById('search-results');
+                
+                if (query.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                const results = this.searchIndex.filter(item => 
+                    item.name.toLowerCase().includes(query.toLowerCase()) ||
+                    (item.country && item.country.toLowerCase().includes(query.toLowerCase()))
+                );
+
+                if (results.length > 0) {
+                    resultsContainer.innerHTML = results.map(item => 
+                        `<div class="search-result-item" data-lat="${item.lat || ''}" data-lng="${item.lng || ''}">
+                            ${item.name} ${item.country ? `(${item.country})` : ''} - ${item.type}
+                         </div>`
+                    ).join('');
+                    
+                    resultsContainer.style.display = 'block';
+                    
+                    // Add click handlers to search results
+                    document.querySelectorAll('.search-result-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const lat = parseFloat(item.dataset.lat);
+                            const lng = parseFloat(item.dataset.lng);
+                            
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                if (item.textContent.includes('country')) {
+                                    this.map.setView([lat, lng], 4);
+                                } else {
+                                    this.map.setView([lat, lng], 13);
+                                }
+                            }
+                            
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('search-box').value = item.textContent.split(' (')[0];
+                        });
+                    });
+                } else {
+                    resultsContainer.innerHTML = '<div class="search-result-item">No results found</div>';
+                    resultsContainer.style.display = 'block';
+                }
+            }
+
+            static generateGlobalData() {
+                // Generate global data points for heatmap
+                const heatData = [];
+                const events = [];
+                
+                // Major cities with safety scores
+                const cities = [
+                    { name: "New York", lat: 40.7128, lng: -74.0060, score: 7 },
+                    { name: "London", lat: 51.5074, lng: -0.1278, score: 6 },
+                    { name: "Tokyo", lat: 35.6762, lng: 139.6503, score: 3 },
+                    { name: "Paris", lat: 48.8566, lng: 2.3522, score: 5 },
+                    { name: "Sydney", lat: -33.8688, lng: 151.2093, score: 4 },
+                    { name: "Cairo", lat: 30.0444, lng: 31.2357, score: 8 },
+                    { name: "Mumbai", lat: 19.0760, lng: 72.8777, score: 7 },
+                    { name: "Beijing", lat: 39.9042, lng: 116.4074, score: 5 },
+                    { name: "Moscow", lat: 55.7558, lng: 37.6173, score: 6 },
+                    { name: "Rio de Janeiro", lat: -22.9068, lng: -43.1729, score: 9 },
+                    { name: "Coimbatore", lat: 11.0168, lng: 76.9558, score: 4 },
+                    { name: "Berlin", lat: 52.5200, lng: 13.4050, score: 5 },
+                    { name: "Delhi", lat: 28.6139, lng: 77.2090, score: 8 },
+                    { name: "Singapore", lat: 1.3521, lng: 103.8198, score: 3 },
+                    { name: "Dubai", lat: 25.2048, lng: 55.2708, score: 4 }
+                ];
+                
+                // Generate heatmap data around each city
+                cities.forEach(city => {
+                    for (let i = 0; i < 20; i++) {
+                        const lat = city.lat + (Math.random() - 0.5) * 0.5;
+                        const lng = city.lng + (Math.random() - 0.5) * 0.5;
+                        const score = Math.max(1, Math.min(10, city.score + (Math.random() - 0.5) * 3));
+                        heatData.push([lat, lng, score]);
+                    }
+                });
+                
+                // Generate events
+                const eventTypes = [
+                    { type: "crime", name: "Crime", icon: "🔫", color: "#d63031" },
+                    { type: "disaster", name: "Disaster", icon: "🌋", color: "#e17055" },
+                    { type: "environment", name: "Environment", icon: "🌡️", color: "#00b894" },
+                    { type: "traffic", name: "Traffic", icon: "🚗", color: "#fdcb6e" },
+                    { type: "public", name: "Public Safety", icon: "👮", color: "#0984e3" }
+                ];
+                
+                cities.forEach(city => {
+                    for (let i = 0; i < 5; i++) {
+                        const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+                        const severity = Math.floor(Math.random() * 10) + 1;
+                        
+                        const event = {
+                            id: `event-${city.name}-${i}-${Date.now()}`,
+                            type: eventType.type,
+                            name: eventType.name,
+                            location: {
+                                lat: city.lat + (Math.random() - 0.5) * 0.1,
+                                lng: city.lng + (Math.random() - 0.5) * 0.1
+                            },
+                            severity: severity,
+                            timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
+                            description: this.generateEventDescription(eventType.type, severity, city.name),
+                            icon: eventType.icon,
+                            color: this.getSeverityColor(severity) // Fixed: Use severity-based color
+                        };
+                        
+                        events.push(event);
+                    }
+                });
+                
+                this.events = events;
+                this.updateHeatmap(heatData);
+                this.updateEventMarkers();
+                this.updateEventList();
+            }
+
+            // Fixed severity color function
+            static getSeverityColor(severity) {
+                if (severity <= 2) return '#00b894'; // Safe - Green
+                if (severity <= 4) return '#4cc9f0'; // Low Risk - Blue
+                if (severity <= 6) return '#fdcb6e'; // Moderate - Yellow
+                if (severity <= 8) return '#e17055'; // Elevated - Orange
+                return '#d63031'; // Critical - Red
+            }
+
+            static generateEventDescription(type, severity, location) {
+                const descriptions = {
+                    crime: [
+                        `Police responding to reported incident in ${location}.`,
+                        `Security alert: Suspicious activity detected in ${location}.`,
+                        `Law enforcement activity reported in ${location}.`,
+                        `Emergency services dispatched to ${location} for security incident.`,
+                        `Public safety warning issued for ${location}.`
+                    ],
+                    disaster: [
+                        `Natural disaster alert: Potential impact on ${location}.`,
+                        `Emergency response activated for ${location} area.`,
+                        `Disaster preparedness measures in effect for ${location}.`,
+                        `Evacuation advisory issued for parts of ${location}.`,
+                        `Relief efforts underway in ${location} following incident.`
+                    ],
+                    environment: [
+                        `Environmental monitoring alert for ${location}.`,
+                        `Air quality advisory issued for ${location}.`,
+                        `Weather-related safety notice for ${location}.`,
+                        `Environmental hazard detected in ${location} area.`,
+                        `Public health advisory for ${location} due to environmental conditions.`
+                    ],
+                    traffic: [
+                        `Traffic disruption reported in ${location}.`,
+                        `Road safety incident affecting ${location} area.`,
+                        `Transportation delay alert for ${location}.`,
+                        `Traffic flow impacted in ${location}.`,
+                        `Commuter advisory issued for ${location} routes.`
+                    ],
+                    public: [
+                        `Public safety announcement for ${location}.`,
+                        `Community safety alert in effect for ${location}.`,
+                        `Public gathering safety notice for ${location}.`,
+                        `Crowd management advisory for ${location}.`,
+                        `Public health and safety update for ${location}.`
+                    ]
+                };
+                
+                const baseDescription = descriptions[type][Math.floor(Math.random() * descriptions[type].length)];
+                
+                // Add severity context
+                let severityText = "";
+                if (severity <= 3) {
+                    severityText = "Low impact expected.";
+                } else if (severity <= 6) {
+                    severityText = "Moderate impact expected.";
+                } else {
+                    severityText = "Significant impact expected.";
+                }
+                
+                return `${baseDescription} ${severityText}`;
+            }
+
+            static updateHeatmap(heatData) {
+                if (this.heatmapLayer) {
+                    this.map.removeLayer(this.heatmapLayer);
+                }
+                
+                // Create heatmap layer with enhanced options for better visualization
+                this.heatmapLayer = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 17,
+                    gradient: {
+                        0.2: '#00b894',  // Safe - Green
+                        0.4: '#4cc9f0',  // Low Risk - Blue
+                        0.6: '#fdcb6e',  // Moderate - Yellow
+                        0.8: '#e17055',  // Elevated - Orange
+                        1.0: '#d63031'   // Critical - Red
+                    },
+                    minOpacity: 0.5
+                });
+                
+                this.map.addLayer(this.heatmapLayer);
+            }
+
+            static updateEventMarkers() {
+                // Clear existing markers
+                this.eventMarkers.clearLayers();
+                
+                // Add markers for each event
+                this.events.forEach(event => {
+                    if (this.activeCategories.has(event.type)) {
+                        // Create a custom icon based on event type and severity
+                        const iconHtml = `
+                            <div style="
+                                background-color: ${event.color};
+                                width: 30px;
+                                height: 30px;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: white;
+                                font-size: 14px;
+                                border: 2px solid white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            ">
+                                ${event.icon}
+                            </div>
+                        `;
+                        
+                        const customIcon = L.divIcon({
+                            html: iconHtml,
+                            className: 'custom-event-icon',
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        });
+                        
+                        const marker = L.marker([event.location.lat, event.location.lng], { icon: customIcon });
+                        
+                        // Enhanced popup content with better layout
+                        const popupContent = `
+                            <div class="event-popup">
+                                <h3>${event.name} Alert</h3>
+                                <p><strong>Location:</strong> ${this.getNearestCity(event.location)}</p>
+                                <p><strong>Severity:</strong> ${event.severity}/10</p>
+                                <div class="severity-bar">
+                                    <div class="severity-fill" style="width: ${event.severity * 10}%; background-color: ${event.color};"></div>
+                                </div>
+                                <p>${event.description}</p>
+                                <p><strong>Time:</strong> ${event.timestamp.toLocaleTimeString()}</p>
+                                <div class="actions">
+                                    <button class="action-btn view-details" data-event-id="${event.id}">View Details</button>
+                                    <button class="action-btn share-alert">Share Alert</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        marker.bindPopup(popupContent);
+                        
+                        // Add click handler for "View Details" button
+                        marker.on('popupopen', () => {
+                            document.querySelector(`.view-details[data-event-id="${event.id}"]`).addEventListener('click', () => {
+                                this.showEventDetails(event);
+                            });
+                        });
+                        
+                        this.eventMarkers.addLayer(marker);
+                    }
+                });
+            }
+
+            static showEventDetails(event) {
+                this.currentEventDetails = event;
+                
+                // Enhanced event details with comprehensive information
+                const modal = document.getElementById('event-details-modal');
+                const title = document.getElementById('event-details-title');
+                const info = document.getElementById('event-details-info');
+                
+                title.textContent = `${event.name} Alert - ${this.getNearestCity(event.location)}`;
+                
+                // Generate detailed information based on event type
+                let detailsHtml = `
+                    <p><strong>Event Type:</strong> ${event.name}</p>
+                    <p><strong>Location:</strong> ${this.getNearestCity(event.location)} (${event.location.lat.toFixed(4)}, ${event.location.lng.toFixed(4)})</p>
+                    <p><strong>Severity Level:</strong> ${event.severity}/10</p>
+                    <div class="severity-bar">
+                        <div class="severity-fill" style="width: ${event.severity * 10}%; background-color: ${event.color};"></div>
+                    </div>
+                    <p><strong>Timestamp:</strong> ${event.timestamp.toLocaleString()}</p>
+                    <p><strong>Description:</strong> ${event.description}</p>
+                `;
+                
+                // Add type-specific information
+                detailsHtml += this.getEventTypeDetails(event);
+                
+                // Add action recommendations
+                detailsHtml += `
+                    <h3 style="margin-top: 20px; color: #4cc9f0;">Recommended Actions</h3>
+                    ${this.getRecommendedActions(event)}
+                `;
+                
+                info.innerHTML = detailsHtml;
+                modal.style.display = 'flex';
+            }
+
+            static getEventTypeDetails(event) {
+                switch(event.type) {
+                    case 'crime':
+                        return `
+                            <h3 style="margin-top: 15px; color: #4cc9f0;">Crime Event Details</h3>
+                            <p>This event involves criminal activity that has been detected by UrbanGuard AI's monitoring systems. 
+                            Our algorithms analyze patterns from multiple data sources to identify potential security threats.</p>
+                            <p><strong>Detection Method:</strong> AI pattern recognition from surveillance and sensor data</p>
+                            <p><strong>Response Status:</strong> Local authorities have been notified</p>
+                        `;
+                    case 'disaster':
+                        return `
+                            <h3 style="margin-top: 15px; color: #4cc9f0;">Disaster Event Details</h3>
+                            <p>UrbanGuard AI has detected indicators of a potential natural disaster. Our system monitors environmental 
+                            sensors, satellite imagery, and geological data to provide early warnings.</p>
+                            <p><strong>Disaster Type:</strong> ${this.getDisasterType(event.severity)}</p>
+                            <p><strong>Monitoring Sources:</strong> Seismic sensors, weather satellites, environmental monitors</p>
+                            <p><strong>Evacuation Status:</strong> ${event.severity > 7 ? 'Recommended in affected areas' : 'Monitoring situation'}</p>
+                        `;
+                    case 'environment':
+                        return `
+                            <h3 style="margin-top: 15px; color: #4cc9f0;">Environmental Event Details</h3>
+                            <p>This alert relates to environmental conditions that may impact public health and safety. UrbanGuard AI 
+                            monitors air quality, temperature, pollution levels, and other environmental factors.</p>
+                            <p><strong>Primary Concern:</strong> ${this.getEnvironmentalConcern(event.severity)}</p>
+                            <p><strong>Data Sources:</strong> Environmental sensors, weather stations, satellite monitoring</p>
+                            <p><strong>Health Advisory:</strong> ${event.severity > 6 ? 'Limit outdoor exposure' : 'Normal precautions advised'}</p>
+                        `;
+                    case 'traffic':
+                        return `
+                            <h3 style="margin-top: 15px; color: #4cc9f0;">Traffic Event Details</h3>
+                            <p>UrbanGuard AI has detected disruptions to transportation networks. Our system analyzes traffic camera feeds, 
+                            GPS data, and incident reports to identify congestion and safety issues.</p>
+                            <p><strong>Incident Type:</strong> ${this.getTrafficIncidentType(event.severity)}</p>
+                            <p><strong>Impact Level:</strong> ${event.severity <= 4 ? 'Minor delays' : event.severity <= 7 ? 'Significant disruption' : 'Major incident'}</p>
+                            <p><strong>Alternative Routes:</strong> Being calculated by navigation systems</p>
+                        `;
+                    case 'public':
+                        return `
+                            <h3 style="margin-top: 15px; color: #4cc9f0;">Public Safety Event Details</h3>
+                            <p>This alert involves general public safety concerns detected through UrbanGuard AI's comprehensive monitoring 
+                            of public spaces, crowd movements, and emergency service communications.</p>
+                            <p><strong>Safety Concern:</strong> ${this.getPublicSafetyConcern(event.severity)}</p>
+                            <p><strong>Monitoring:</strong> Public cameras, social media analysis, emergency service feeds</p>
+                            <p><strong>Public Advisory:</strong> ${event.severity > 5 ? 'Exercise caution in area' : 'Situation being monitored'}</p>
+                        `;
+                    default:
+                        return '';
+                }
+            }
+
+            static getDisasterType(severity) {
+                const types = [
+                    "Earthquake/Tsunami Alert",
+                    "Flood Warning",
+                    "Wildfire Detection",
+                    "Severe Weather",
+                    "Volcanic Activity"
+                ];
+                return types[Math.min(severity - 1, types.length - 1)];
+            }
+
+            static getEnvironmentalConcern(severity) {
+                const concerns = [
+                    "Air Quality Degradation",
+                    "Temperature Extreme",
+                    "Pollution Spike",
+                    "Water Quality Issue",
+                    "Radiation Level Change"
+                ];
+                return concerns[Math.min(severity - 1, concerns.length - 1)];
+            }
+
+            static getTrafficIncidentType(severity) {
+                const types = [
+                    "Minor Collision",
+                    "Road Closure",
+                    "Major Accident",
+                    "Infrastructure Failure",
+                    "Massive Gridlock"
+                ];
+                return types[Math.min(severity - 1, types.length - 1)];
+            }
+
+            static getPublicSafetyConcern(severity) {
+                const concerns = [
+                    "Crowd Gathering",
+                    "Public Disturbance",
+                    "Emergency Evacuation",
+                    "Infrastructure Safety",
+                    "Public Health Risk"
+                ];
+                return concerns[Math.min(severity - 1, concerns.length - 1)];
+            }
+
+            static getRecommendedActions(event) {
+                let actions = '';
+                
+                switch(event.type) {
+                    case 'crime':
+                        actions = `
+                            <ul>
+                                <li>Avoid the immediate area if possible</li>
+                                <li>Follow instructions from local authorities</li>
+                                <li>Report any suspicious activity to police</li>
+                                <li>Stay informed through official channels</li>
+                            </ul>
+                        `;
+                        break;
+                    case 'disaster':
+                        actions = `
+                            <ul>
+                                <li>Follow evacuation orders if issued</li>
+                                <li>Prepare emergency supplies</li>
+                                <li>Monitor official weather/disaster alerts</li>
+                                <li>Have a family communication plan ready</li>
+                                ${event.severity > 7 ? '<li>Move to higher ground if near coast (tsunami risk)</li>' : ''}
+                            </ul>
+                        `;
+                        break;
+                    case 'environment':
+                        actions = `
+                            <ul>
+                                <li>Limit outdoor activities if air quality is poor</li>
+                                <li>Use appropriate protective equipment if necessary</li>
+                                <li>Stay hydrated in extreme temperatures</li>
+                                <li>Follow public health advisories</li>
+                            </ul>
+                        `;
+                        break;
+                    case 'traffic':
+                        actions = `
+                            <ul>
+                                <li>Seek alternative routes if possible</li>
+                                <li>Allow extra travel time</li>
+                                <li>Use public transportation if available</li>
+                                <li>Check real-time traffic updates before traveling</li>
+                            </ul>
+                        `;
+                        break;
+                    case 'public':
+                        actions = `
+                            <ul>
+                                <li>Avoid large gatherings if safety is concern</li>
+                                <li>Follow instructions from security personnel</li>
+                                <li>Stay aware of your surroundings</li>
+                                <li>Have an exit plan from crowded areas</li>
+                            </ul>
+                        `;
+                        break;
+                }
+                
+                return actions;
+            }
+
+            static getNearestCity(location) {
+                // Simple implementation to find nearest major city
+                const cities = [
+                    { name: "New York", lat: 40.7128, lng: -74.0060 },
+                    { name: "London", lat: 51.5074, lng: -0.1278 },
+                    { name: "Tokyo", lat: 35.6762, lng: 139.6503 },
+                    { name: "Paris", lat: 48.8566, lng: 2.3522 },
+                    { name: "Sydney", lat: -33.8688, lng: 151.2093 },
+                    { name: "Cairo", lat: 30.0444, lng: 31.2357 },
+                    { name: "Mumbai", lat: 19.0760, lng: 72.8777 },
+                    { name: "Beijing", lat: 39.9042, lng: 116.4074 },
+                    { name: "Moscow", lat: 55.7558, lng: 37.6173 },
+                    { name: "Rio de Janeiro", lat: -22.9068, lng: -43.1729 },
+                    { name: "Coimbatore", lat: 11.0168, lng: 76.9558 },
+                    { name: "Berlin", lat: 52.5200, lng: 13.4050 },
+                    { name: "Delhi", lat: 28.6139, lng: 77.2090 },
+                    { name: "Singapore", lat: 1.3521, lng: 103.8198 },
+                    { name: "Dubai", lat: 25.2048, lng: 55.2708 }
+                ];
+                
+                let nearestCity = cities[0];
+                let minDistance = this.calculateDistance(location, cities[0]);
+                
+                for (let i = 1; i < cities.length; i++) {
+                    const distance = this.calculateDistance(location, cities[i]);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestCity = cities[i];
+                    }
+                }
+                
+                return nearestCity.name;
+            }
+
+            static calculateDistance(loc1, loc2) {
+                // Simple distance calculation (not accounting for Earth's curvature)
+                return Math.sqrt(Math.pow(loc1.lat - loc2.lat, 2) + Math.pow(loc1.lng - loc2.lng, 2));
+            }
+
+            static updateEventList() {
+                const eventList = document.getElementById('event-list');
+                const filteredEvents = this.events.filter(event => 
+                    this.activeCategories.has(event.type)
+                ).slice(0, 10); // Show only 10 most recent
+                
+                eventList.innerHTML = filteredEvents.map(event => `
+                    <li class="event-item" data-event-id="${event.id}">
+                        <div class="event-type">${event.icon} ${event.name}</div>
+                        <div class="event-location">${this.getNearestCity(event.location)}</div>
+                        <div class="event-time">${event.timestamp.toLocaleTimeString()}</div>
+                    </li>
+                `).join('');
+                
+                // Add click handlers to event list items
+                document.querySelectorAll('.event-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const eventId = item.dataset.eventId;
+                        const event = this.events.find(e => e.id === eventId);
+                        if (event) {
+                            this.map.setView([event.location.lat, event.location.lng], 13);
+                            // Open the popup for the corresponding marker
+                            this.eventMarkers.getLayers().forEach(layer => {
+                                if (layer.getLatLng().lat === event.location.lat && 
+                                    layer.getLatLng().lng === event.location.lng) {
+                                    layer.openPopup();
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+
+            static applyTimeFilter(timeRange) {
+                // In a real application, this would filter events based on timestamp
+                console.log(`Applying time filter: ${timeRange}`);
+                // For demo purposes, we'll just update the event list
+                this.updateEventList();
+            }
+
+            static switchView(view) {
+                this.currentView = view;
+                
+                document.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                if (view === 'global') {
+                    document.getElementById('view-global').classList.add('active');
+                    this.map.setView([20, 0], 2);
+                } else {
+                    document.getElementById('view-city').classList.add('active');
+                    // In a real app, this would focus on a specific city
+                    this.map.setView([11.0168, 76.9558], 13); // Coimbatore
+                }
+            }
+
+            static updateHeatmapAndEvents() {
+                // This would regenerate or filter the heatmap and events based on active categories
+                // For this demo, we'll just update the markers
+                this.updateEventMarkers();
+                this.updateEventList();
+            }
+        }
+
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            UrbanGuardApp.init();
+        });
+    </script>
+</body>
+</html>

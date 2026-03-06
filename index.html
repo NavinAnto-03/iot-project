@@ -1708,23 +1708,20 @@
                     this.map.setView([20, 0], 2);
                 } else {
                     document.getElementById('view-city').classList.add('active');
-                    // In a real app, this would focus on a specific city
                     this.map.setView([11.0168, 76.9558], 13); // Coimbatore
                 }
             }
 
             static updateHeatmapAndEvents() {
-                // This would regenerate or filter the heatmap and events based on active categories
-                // For this demo, we'll just update the markers
                 this.updateEventMarkers();
                 this.updateEventList();
             }
         }
 
-        // Initialize the application when the DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             UrbanGuardApp.init();
         });
     </script>
 </body>
+
 </html>

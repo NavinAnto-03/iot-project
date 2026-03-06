@@ -1,4 +1,3 @@
-// UrbanGuardApp.js - Main application controller
 class UrbanGuardApp {
     static init() {
         this.sensorFusion = new SensorFusionEngine();
@@ -25,24 +24,17 @@ class UrbanGuardApp {
     }
 
     static setupEventListeners() {
-        // Heatmap toggle
         document.getElementById('heatmap-toggle').addEventListener('change', (e) => {
             if (this.heatmapRenderer.heatmapLayer) {
                 this.heatmapRenderer.toggleLayer(this.heatmapRenderer.heatmapLayer, e.target.checked);
             }
         });
-
-        // Sensors toggle
         document.getElementById('sensors-toggle').addEventListener('change', (e) => {
             this.heatmapRenderer.toggleLayer(this.heatmapRenderer.sensorLayer, e.target.checked);
         });
-
-        // Auto-refresh toggle
         document.getElementById('refresh-toggle').addEventListener('change', (e) => {
-            // Implementation for auto-refresh control
         });
 
-        // Time filter buttons
         document.querySelectorAll('.time-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
@@ -51,7 +43,6 @@ class UrbanGuardApp {
             });
         });
 
-        // Wokwi data handler
         window.onWokwiData = (sensorData) => {
             this.processSensorData(sensorData);
         };
@@ -64,7 +55,7 @@ class UrbanGuardApp {
     }
 
     static processSensorData(sensorData) {
-        // Add sensor data to fusion engine
+
         sensorData.forEach(sensor => {
             this.sensorFusion.addSensorData(
                 sensor.id,
@@ -75,15 +66,12 @@ class UrbanGuardApp {
             );
         });
 
-        // Get correlated events
         const events = this.sensorFusion.correlateEvents();
         
-        // Update visualization
         this.heatmapRenderer.updateHeatmap(events);
         this.heatmapRenderer.updateSensors(sensorData);
         this.heatmapRenderer.updateEvents(events);
         
-        // Update UI
         this.updateStatistics(sensorData, events);
         this.updateEventList(events);
     }
@@ -116,15 +104,13 @@ class UrbanGuardApp {
     }
 
     static applyTimeFilter(timeRange) {
-        // Filter events based on time range
         const now = Date.now();
-        let timeThreshold = now - (60 * 60 * 1000); // Default 1 hour
+        let timeThreshold = now - (60 * 60 * 1000); 
         
         switch(timeRange) {
             case '6h': timeThreshold = now - (6 * 60 * 60 * 1000); break;
             case '24h': timeThreshold = now - (24 * 60 * 60 * 1000); break;
         }
-        
-        // Implementation would filter events based on timestamp
     }
+
 }

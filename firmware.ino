@@ -76,16 +76,13 @@ void loop() {
 }
 
 void readSensors() {
-  // Simulate realistic Coimbatore environmental data
   temperature = 25.0 + (random(0, 150) / 10.0); // 25-40°C typical for Coimbatore
   humidity = 40.0 + (random(0, 400) / 10.0);    // 40-80% humidity
   motionDetected = digitalRead(PIR_PIN);
   soundLevel = analogRead(MIC_PIN);
-  
-  // Simulate urban events (higher probability during "peak hours")
   int hour = (millis() / 3600000) % 24;
   bool isPeakHour = (hour >= 7 && hour <= 10) || (hour >= 17 && hour <= 20);
-  int eventProbability = isPeakHour ? 30 : 15; // Higher probability during peak hours
+  int eventProbability = isPeakHour ? 30 : 15; 
   
   if (random(0, 100) < eventProbability) {
     motionDetected = 1;
@@ -218,4 +215,5 @@ void updateDisplay() {
     lcd.print("STATUS:NORMAL  ");
     digitalWrite(LED_GREEN, HIGH);
   }
+
 }

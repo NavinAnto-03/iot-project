@@ -10,7 +10,6 @@ class WokwiConnector {
 
     async connect() {
         try {
-            // Request serial port connection
             this.port = await navigator.serial.requestPort();
             await this.port.open({ baudRate: 9600 });
 
@@ -24,7 +23,7 @@ class WokwiConnector {
             return true;
         } catch (error) {
             console.error('Error connecting to Wokwi:', error);
-            this.simulateData(); // Fallback to simulated data
+            this.simulateData(); 
             return false;
         }
     }
@@ -62,7 +61,6 @@ class WokwiConnector {
                 }
             });
 
-            // Notify application of new data
             if (typeof window.onWokwiData === 'function') {
                 window.onWokwiData(Array.from(this.sensors.values()));
             }
@@ -72,7 +70,6 @@ class WokwiConnector {
     }
 
     generateLocation(sensorId) {
-        // Generate consistent location based on sensor ID
         const baseLat = 40.7128;
         const baseLng = -74.0060;
         const hash = this.hashString(sensorId);
@@ -93,7 +90,6 @@ class WokwiConnector {
     }
 
     simulateData() {
-        // Fallback simulation when Wokwi is not available
         console.log('Using simulated sensor data');
         
         setInterval(() => {
@@ -149,4 +145,5 @@ class WokwiConnector {
             await this.port.close();
         }
     }
+
 }
